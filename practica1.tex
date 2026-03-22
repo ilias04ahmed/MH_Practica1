@@ -126,7 +126,7 @@ Donde los pesos asignados y justificados son:
     \item $P_{consecutivos}$ ($W_1 = 1$): Penaliza si un estudiante tiene exámenes en slots seguidos ($slot_i$ y $slot_{i+1}$). Se calcula ordenando los slots de cada estudiante. Le he asignado el peso base de 1.
     \item $P_{mismo\_dia}$ ($W_2 = 2$): Penaliza tener múltiples exámenes en la misma jornada (asumiendo jornadas de 5 slots). Le he dado un peso el doble de estricto que los consecutivos, ya que a nivel de fatiga y saturación mental para un alumno, hacer dos o tres exámenes en un mismo día es un defecto grave de planificación.
     \item $P_{distribucion}$ ($W_3 = 1$): He utilizado la varianza del uso de los slots. Una varianza cercana a 0 indica que los exámenes están perfectamente repartidos a lo largo de todas las franjas horarias.
-    \item Restricciones duras ($W_v = 100000$): He asignado un peso desproporcionadamente alto (100000) a cada violación de restricción dura (solapamiento o exceso de aforo). De esta forma, cualquier solución factible siempre será matemáticamente superior a una infactible.
+    \item Restricciones duras ($W_v = 100000$): He asignado un peso desproporcionadamente alto (100000) a cada incumplimiento de restricción dura (solapamiento o exceso de aforo). De esta forma, cualquier solución factible siempre será matemáticamente superior a una infactible.
 \end{itemize}
 
 \section{Generación de instancias}
@@ -151,7 +151,7 @@ Para garantizar que los algoritmos se prueban en un entorno realista y heterogé
 \section{Solución inicial}
 La construcción de la solución inicial (\texttt{solucion\_inicial}) la he realizado mediante una heurística aleatoria. Para cada examen, el algoritmo genera aleatoriamente un slot y un aula, e intenta validar únicamente que la capacidad sea suficiente (con un límite de 100 intentos). Si no encuentra hueco, lo asigna a la fuerza.
 
-Esta estrategia me genera un punto de partida de muy baja calidad (con numerosos conflictos y violaciones), pero tiene la gran ventaja de ser computacionalmente instantánea (0.01 segundos), pasando todo el esfuerzo de optimización a la metaheurística que se encarga del resto del proceso.
+Esta estrategia me genera un punto de partida de muy baja calidad (con numerosos conflictos y incumplimientos), pero tiene la gran ventaja de ser computacionalmente instantánea (0.01 segundos), pasando todo el esfuerzo de optimización a la metaheurística que se encarga del resto del proceso.
 
 \section{Vecindario}
 El operador de vecindario es el motor de la búsqueda local, lo que hace que vaya pasando de un vecino a otro y evaluandolos entre sí. He diseñado un generador aleatorio (\texttt{generar\_vecino}) que cambia la solución actual aplicando uno de estos tres movimientos de forma aleatoria:
@@ -194,14 +194,14 @@ Para solucionarlo, creé esta función. Lo que hace es recorrer la tabla una sol
 \subsection{\texttt{funcionObjetivo.py}}
 Este archivo es el núcleo matemático del proyecto. En lugar de hacer una función muy larga y compleja, programé pequeñas funciones independientes para cada problema: una para contar exámenes en días seguidos (\texttt{penalizacion\_consecutivos}), otra para exámenes en el mismo día (\texttt{penalizacion\_mismo\_dia}), otra para ver qué tan bien repartidos están (\texttt{penalizacion\_distribucion}), y la más importante, la que cuenta los solapamientos y excesos de aforo (restricciones duras).
 
-Finalmente, la función principal \texttt{evaluar\_detallado()} las llama a todas y suma los puntos multiplicando por los pesos que definí en la teoría. Aquí es donde puse el multiplicador bestial de $100000 \cdot v$ a las violaciones para que el algoritmo huya despavorido de los horarios ilegales.
+Finalmente, la función principal \texttt{evaluar\_detallado()} las llama a todas y suma los puntos multiplicando por los pesos que definí en la teoría. Aquí es donde puse el multiplicador bestial de $100000 \cdot v$ a los incumplimientos de restricciones para que el algoritmo huya de los horarios ilegales.
 
 \begin{lstlisting}[caption={Función de evaluación detallada en Python}]
 def evaluar_detallado(sol, exams, rooms, mapa_estudiantes, n_slots):
     p1 = penalizacion_consecutivos(sol, mapa_estudiantes)
     p2 = penalizacion_mismo_dia(sol, mapa_estudiantes)
     p3 = penalizacion_distribucion(sol, n_slots)
-    v = violaciones(sol, exams, rooms, mapa_estudiantes)
+    v = incumplimientos(sol, exams, rooms, mapa_estudiantes)
     total = p1 + 2*p2 + p3 + 100000*v
     return total, p1, p2, p3, v
 \end{lstlisting}
@@ -224,7 +224,7 @@ El núcleo del archivo es la función \texttt{ejecutar\_experimentos()}, donde s
 
 Además de orquestar el flujo lógico, este archivo cumple una doble función vital en la recolección y presentación de resultados:
 \begin{itemize}
-    \item \textbf{Salida por consola:} Imprime un registro detallado de las evaluaciones, penalizaciones y violaciones de cada algoritmo paso a paso, culminando en la impresión de una tabla resumen perfectamente tabulada con los costes y tiempos comparados.
+    \item \textbf{Salida por consola:} Imprime un registro detallado de las evaluaciones, penalizaciones y incumplimientos de restricciones duras de cada algoritmo paso a paso, culminando en la impresión de una tabla resumen perfectamente tabulada con los costes y tiempos comparados.
     \item \textbf{Integración visual:} Recopila durante el bucle todos los arrays de evolución de costes y las métricas finales para, justo antes de terminar la ejecución, llamar a las funciones del módulo \texttt{graficas.py}. De esta forma, automatiza la creación y guardado de todas las figuras analíticas utilizadas en los apartados posteriores de esta memoria.
 \end{itemize}
 
@@ -257,7 +257,7 @@ Al ejecutar \texttt{main.py} llamando a todos los módulos y poniendo a competir
 \textbf{Métrica} & \textbf{Solución Inicial} & \textbf{Primer Mejor} & \textbf{Mejor Vecino} \\
 \midrule
 Coste Total & 33,704,554.6 & 8,704,058.3 & 22,704,264.95 \\
-Violaciones (Duras) & 337 & 87 & 227 \\
+Incumplimientos (Duras) & 337 & 87 & 227 \\
 Penalización Consecutivos & 833 & 792 & 788 \\
 Penalización Mismo Día & 1860 & 1633 & 1738 \\
 Tiempo de Ejecución & 0.0107 s & 43.42 s & 48.33 s \\
@@ -268,13 +268,12 @@ Iteraciones (Mejoras) & N/A & 139 & 10 \\
 \caption{Comparativa de métricas en la Instancia Media (100 exámenes).}
 \end{table}
 
-Aunque no se haya llegado a 0 violaciones debido a la altísima densidad de la instancia (100 exámenes y 2000 estudiantes para solo 10 aulas) y al número máximo de evaluaciones impuesto, se puede observar una reducción drástica respecto al inicio, demostrando que la heurística funciona.
+Aunque no se haya llegado a 0 incumplimientos de las restricciones duras debido a la altísima densidad de la instancia (100 exámenes y 2000 estudiantes para solo 10 aulas) y al número máximo de evaluaciones impuesto, se puede observar una reducción drástica respecto al inicio, demostrando que la heurística funciona.
 
 \begin{figure}[H]
     \centering
-    % Nota: Crea o adjunta una gráfica de violaciones, si no la tienes, puedes comentar esta figura.
     \includegraphics[width=0.7\textwidth]{graficas/comparativa_costes.png} 
-    \caption{Evolución del número de violaciones/coste de restricciones duras según el algoritmo utilizado.}
+    \caption{Evolución del coste de restricciones duras según el algoritmo utilizado.}
 \end{figure}
 
 \subsection{Escalabilidad: Comparativa según el tamaño de la instancia}
@@ -334,7 +333,7 @@ Tomando como referencia los datos obtenidos en la ejecución con la Instancia Me
 
 En primer lugar, se aprecia que la solución inicial (aleatoria) es bastante mala y altamente costosa, actuando únicamente como un comodín a partir del cuál empezar a encontrar mejoras rápido con los algoritmos.
 
-Lo verdaderamente destacable es que la estrategia de Primer Mejor ha dado un resultado más eficiente con una diferencia abismal con respecto al de la estrategia del Mejor Vecino, obteniendo un coste muchísimo menor (8.7 millones frente a 22.7 millones) y reduciendo las violaciones a casi un tercio, invirtiendo además un poco menos de tiempo.
+Lo verdaderamente destacable es que la estrategia de Primer Mejor ha dado un resultado más eficiente con una diferencia abismal con respecto al de la estrategia del Mejor Vecino, obteniendo un coste muchísimo menor (8.7 millones frente a 22.7 millones) y reduciendo los incumplimientos a casi un tercio, invirtiendo además un poco menos de tiempo.
 
 \begin{figure}[H]
     \centering

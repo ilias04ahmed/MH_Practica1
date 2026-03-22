@@ -15,7 +15,7 @@ def imprimir_detalle(nombre, sol, exams, rooms, mapa_estudiantes, n_slots, tiemp
     print(" Penalizacion consecutivos:", p1)
     print(" Penalizacion mismo dia:", p2)
     print(" Penalizacion distribucion:", round(p3, 2))
-    print(" Violaciones:", v)
+    print(" Incumplimientos:", v)
     print(" Tiempo:", round(tiempo, 4), "segundos")
     print(" Evaluaciones:", evaluaciones)
     print(" Iteraciones (mejoras):", len(evolucion) - 1)
@@ -69,7 +69,7 @@ def ejecutar_experimentos():
 
         print("------ SOLUCION INICIAL ------")
         print("Coste total:", round(total_ini, 2))
-        print(" Violaciones:", v_ini)
+        print(" Incumplimientos:", v_ini)
         print(" Tiempo:", round(t_ini, 4), "segundos")
         print()
 

@@ -41,7 +41,7 @@ def penalizacion_distribucion(sol, n_slots):
     return np.var(uso)
 
 
-def violaciones(sol, exams, rooms, mapa_estudiantes):
+def incumplimientos(sol, exams, rooms, mapa_estudiantes):
     v = 0
 
     for i in range(len(exams)):
@@ -69,7 +69,7 @@ def evaluar_detallado(sol, exams, rooms, mapa_estudiantes, n_slots):
     p1 = penalizacion_consecutivos(sol, mapa_estudiantes)
     p2 = penalizacion_mismo_dia(sol, mapa_estudiantes)
     p3 = penalizacion_distribucion(sol, n_slots)
-    v = violaciones(sol, exams, rooms, mapa_estudiantes)
+    v = incumplimientos(sol, exams, rooms, mapa_estudiantes)
 
     total = p1 + 2 * p2 + p3 + 100000 * v
 
